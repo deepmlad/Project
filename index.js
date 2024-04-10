@@ -7,7 +7,7 @@ const app = express();
 const { body, validationResult } = require("express-validator");
 const PORT = process.env.PORT || 3000;
 var bodyParser = require("body-parser"); // pull information from HTML POST (express4)
-
+const handlebars = require( 'express-handlebars');
 // Middleware
 // app.use(cors());
 app.use(express.json());
@@ -17,6 +17,8 @@ app.use(bodyParser.json()); // parse application/json
 app.use(bodyParser.json({ type: "application/vnd.api+json" })); // parse application/vnd.api+json as json
 
 const restaurant = require("./models/Restaurant");
+
+app.engine('hbs',hand)
 
 restaurant
   .initialize(database.url)
@@ -59,7 +61,7 @@ app.get("/api/restaurants/:id", (req, res) => {
   const restaurantId = req.params.id;
 
   // Fetch the restaurant by _id from the database
-  db.getRestaurantById(restaurantId)
+  restaurant.getRestaurantById(restaurantId)
     .then((restaurant) => {
       // If the restaurant is not found, return a 404 Not Found response
       if (!restaurant) {
