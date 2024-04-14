@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+require('dotenv').config();
+
+const connectionString = process.env.DB_CONNECTION_STRING;
 
 // Define the schema for the Restaurant collection
 const restaurantSchema = new mongoose.Schema({
@@ -24,7 +27,7 @@ const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 
 const db = {
   // Function to initialize the MongoDB connection and Restaurant model
-  initialize: function(connectionString) {
+  initialize: function() {
     return new Promise((resolve, reject) => {
       mongoose.connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
         .then(() => {
@@ -44,10 +47,14 @@ const db = {
   },
 
   // Function to get all restaurants for a specific page and optionally filter by borough
-  getAllRestaurants: function(page, perPage, borough) {
+  getAllRestaurants: function(page, perPage) {
     const skip = (page - 1) * perPage;
-    const query = borough ? { borough: borough } : {};
-    return Restaurant.find(query).skip(skip).limit(perPage).sort({ restaurant_id: 1 });
+    return Restaurant.find().skip(skip).limit(perPage).exec()
+        .then(restaurants => {
+            return Restaurant.countDocuments().exec().then(total => {
+                return { data: restaurants, recordsTotal: total };
+            });
+        });
   },
 
   // Function to get a restaurant by its ID
@@ -63,7 +70,26 @@ const db = {
   // Function to delete a restaurant by its ID
   deleteRestaurantById: function(id) {
     return Restaurant.findByIdAndDelete(id);
-  }
+  },
+
+  searchRestaurants: function(keyword, page, perPage) {
+    const skip = (page - 1) * perPage;
+
+    const query = keyword ? {
+        $or: [
+            { name: { $regex: keyword, $options: 'i' } },
+            { borough: { $regex: keyword, $options: 'i' } },
+            { cuisine: { $regex: keyword, $options: 'i' } },
+            { "address.street": { $regex: keyword, $options: 'i' } },
+            { "address.building": { $regex: keyword, $options: 'i' } },
+            { "address.zipcode": { $regex: keyword, $options: 'i' } }
+        ]
+    } : {};
+
+    return Restaurant.find(query).limit(perPage).exec()
+        .then(restaurants => Restaurant.countDocuments(query).exec().then(total => ({ data: restaurants, recordsTotal: total })));
+},
+
 };
 
 module.exports = db;

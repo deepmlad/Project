@@ -1,0 +1,91 @@
+<center>
+  <div class="container">
+    <form id="restaurantForm">
+  <div class="form-group">
+    <input type="text" class="form-control" id="name" name="name" placeholder="Restaurant Name" required="Please enter valid restaurant name">
+  </div>
+  <div class="form-group">
+    <input type="text" class="form-control" id="borough" name="borough" placeholder="Borough" required="Please enter valid borough">
+  </div>
+  <div class="form-group">
+    <input type="text" class="form-control" id="cuisine" name="cuisine" placeholder="Cuisine" required="Please enter valid cuisine">
+  </div>
+  <div class="form-group">
+    <input type="text" class="form-control" id="building" name="address.building" placeholder="Building" required="Please enter valid building address">
+    <input type="text" class="form-control" id="street" name="address.street" placeholder="Street" required="Please enter valid street name">
+    <input type="text" class="form-control" id="zipcode" name="address.zipcode" placeholder="Zipcode" required="Please enter valid zipcode">
+  </div>
+  <div class="form-group">
+    <input type="date" class="form-control" id="date" name="grades.date" placeholder="Date" required="Please select valid date!">
+    <select id="grade" name="grades.grade" class="form-control" required="Please select grade">
+      <option value="">-- Select Grade --</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+    </select>
+    <input type="number" id="score" name="grades.score" class="form-control" min="0" max="100" placeholder="Score" required="Please enter valid score">
+  </div>
+  <div class="form-group">
+    <button type="submit" class="btn btn-primary" id="btnAdd">Add Restaurant</button>
+  </div>
+</form>
+  </div>
+</center>
+<script>
+       $(document).ready(function() {
+    $('#restaurantForm').submit(function(event) {
+        event.preventDefault(); 
+
+        // Serialize the form data into an object
+        var formData = $(this).serializeArray();
+        var jsonData = {};
+
+        // Convert the serialized data into a JSON object
+        $.each(formData, function() {
+            // If the field is part of the address, create an address object
+            if (this.name.startsWith('address')) {
+                var addressField = this.name.split('.')[1];
+                if (!jsonData['address']) {
+                    jsonData['address'] = {};
+                }
+                jsonData['address'][addressField] = this.value;
+            } else if(this.name.startsWith('grade')){
+              var gradesField = this.name.split('.')[1];
+              if(!jsonData['grades']){
+                jsonData['grades'] = [{}];
+              }
+              if(gradesField == "grade"){
+                console.log($("#grade").find(":selected").val());
+                jsonData['grades'][0][gradesField] = $("#grade").find(":selected").val();
+              }else{
+                jsonData['grades'][0][gradesField] = this.value;
+              }
+            }else {
+                // Otherwise, directly add it to the JSON object
+                jsonData[this.name] = this.value || '';
+            }
+        });
+
+        // Send AJAX request
+        $.ajax({
+            type: "POST",
+            url: "/api/restaurants",
+            data: JSON.stringify(jsonData),
+            contentType: "application/json",
+            success: function(resp) {
+                if (resp){
+                    alert("Restaurant added successfully!");
+                    location.reload();
+                }
+                else
+                    alert("Something went wrong!");
+            },
+            error: function(xhr, status, error) {
+                // Handle error
+                console.error("Error adding restaurant:", error);
+                alert("Failed to add restaurant. Please try again.");
+            }
+        });
+    });
+});
+    </script>

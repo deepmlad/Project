@@ -1,0 +1,51 @@
+<center>
+    <div class="container">
+        <form>
+            <input type="text" class="form-control" id="txtRestaurantId" placeholder="Restaurant ID" required>
+            <button type="submit" class="form-control" id="btnSearch">Search</button>
+        </form>
+    </div>
+    <div class="container" id="display"></div>
+</center>
+<script>
+    $(document).ready(function(){
+        $("#btnSearch").click(function(event){
+            event.preventDefault();
+            var id = $("#txtRestaurantId").val();
+            $.ajax({
+                type: "GET",
+                url:"/api/restaurants/" +id,
+                success:function(resp){
+                    console.log(resp);
+                    var display=`
+                        <table class='table table-striped'>
+                            <thead>
+                                <th>Name</th>
+                                <th>Cuisine</th>
+                                <th>Borough</th>
+                                <th>Address</th>
+                                <th>Grade</th>
+                            <thead>
+                            <tbody>
+                    `;
+                    {{!-- $.each(resp,function(index,val){ --}}
+                        display += `
+                            <tr>
+                                <td>${resp.name}</td>
+                                <td>${resp.cuisine}</td>
+                                <td>${resp.borough}</td>
+                                <td>${resp.address.building}, ${resp.address.street}, ${resp.address.zipcode}</td>
+                                <td>${resp.grades[0].grade}</td>
+                            <tr>
+                        `;
+                    {{!-- }); --}}
+                    display += `
+                        </tbody>
+                        </table>
+                    `;
+                    $("#display").html(display);
+                }
+            })
+        });
+    });
+</script>
