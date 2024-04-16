@@ -31,7 +31,7 @@ function verifyToken(req, res, next) {
     req.token = bearerToken;
     next(); 
   } else {
-    res.redirect("/login"); 
+    res.send(`<script>alert('Unathorized Access!'); window.location.href='/login'</script>`); 
   }
 }
 
