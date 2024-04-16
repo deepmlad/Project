@@ -86,7 +86,6 @@
                 type: "GET",
                 url: "/api/restaurants/" + id,
                 success: function (resp) {
-                    console.log(resp);
                     if (resp) {
                         $("#name").val(resp.name);
                         $("#borough").val(resp.borough);
@@ -109,7 +108,7 @@
             if (confirm("Are you sure you want to delete?")) {
                 $.ajax({
                     type: "DELETE",
-                    url: "/api/restaurant" + id,
+                    url: "/api/restaurants/" + id,
                     success: function (resp) {
                         if (resp) {
                             alert("Record deleted successfully!");

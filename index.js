@@ -1,35 +1,39 @@
-// server.js
+// Import required modules
 const express = require("express");
 const app = express();
 const { body, validationResult } = require("express-validator");
 const PORT = process.env.PORT || 3000;
-var bodyParser = require("body-parser"); // pull information from HTML POST (express4)
+const bodyParser = require("body-parser");
 const handlebars = require("express-handlebars");
 const dotenv = require('dotenv');
-
-// Middleware
-// app.use(cors());
-app.use(express.json());
-
-app.use(bodyParser.urlencoded({ extended: "true" })); // parse application/x-www-form-urlencoded
-app.use(bodyParser.json()); // parse application/json
-app.use(bodyParser.json({ type: "application/vnd.api+json" })); // parse application/vnd.api+json as json
-
+const cookieParser = require('cookie-parser');
 const restaurant = require("./models/Restaurant");
 const user = require("./models/User");
 
-app.engine(
-  "hbs",
-  handlebars.engine({
-    extname: ".hbs",
-    defaultLayout: "main",
-  })
-);
+// Middleware setup
+app.use(express.json());
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: "true" }));
+app.use(bodyParser.json());
+app.use(bodyParser.json({ type: "application/vnd.api+json" }));
 
+// View engine setup
+app.engine("hbs", handlebars.engine({ extname: ".hbs", defaultLayout: "main" }));
 app.set("view engine", "hbs");
-
 dotenv.config();
 
+// Token verification middleware
+function verifyToken(req, res, next) {
+  const bearerHeader = req.cookies.token;
+  if (typeof bearerHeader !== "undefined" && bearerHeader != "") {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    req.token = bearerToken;
+    next(); 
+  } else {
+    res.redirect("/login"); 
+  }
+}
 
 restaurant
   .initialize()
@@ -45,38 +49,89 @@ restaurant
 
 
 
-app.get("/", (req, res) => {
+app.get("/",verifyToken, (req, res) => {
   res.render("index");
 });
 
-// route to get all restaurants
+// register
 
-app.get("/search/restaurant", (req, res) => {
+app.get("/add/user", verifyToken,(req,res)=>{
+  res.render("register.hbs",{
+    layout:'secondary'
+  })
+})
+
+app.post("/add/user",(req,res)=>{
+  var email = req.body.email;
+  var password = req.body.password;
+  var newuser = req.body;
+  user.register(newuser)
+      .then((result) =>{
+          res.json(result);
+        })
+      .catch((err) => {
+        console.log(err)
+      });
+
+});
+
+// login
+app.get("/login",(req,res)=>{
+  res.render("login.hbs",{
+    layout:'secondary'
+  })
+})
+
+app.post("/login",(req,res)=>{
+var email = req.body.email;
+var password = req.body.password;
+  user.login(email,password)
+      .then((result)=>{
+        // const token = result.token;
+        // res.cookie('token', token, { maxAge: 3600000, httpOnly: true }); // Set cookie with token
+        // req.token = token
+        // res.redirect("/");
+        res.send(result);
+      })
+      .catch((err)=>{
+        res.json(err);
+      })
+})
+
+
+
+// route to search restaurant by ID
+
+app.get("/search/restaurant", verifyToken, (req, res) => {
   res.render("searchRestaurant");
 });
 
-// route
-app.get("/api/restaurants/:id", (req, res) => {
+app.get("/api/restaurants/:id", verifyToken, (req, res) => {
   // Extract the _id parameter from the request
   const restaurantId = req.params.id;
   // Fetch the restaurant by _id from the database
   restaurant
-    .getRestaurantById(restaurantId)
-    .then((restaurant) => {
-      // If the restaurant is not found, return a 404 Not Found response
-      if (!restaurant) {
-        return res.status(404).json({ error: "Restaurant not found" });
-      }
-      // Return the restaurant to the client
-      res.json(restaurant);
-    })
-    .catch((error) => {
-      console.error("Error fetching restaurant:", error);
-      res.status(500).json({ error: "Internal server error" });
-    });
+  .getRestaurantById(restaurantId)
+  .then((restaurant) => {
+    // If the restaurant is not found, return a 404 Not Found response
+    if (!restaurant) {
+      return res.status(404).json({ error: "Restaurant not found" });
+    }
+    // Return the restaurant to the client
+    res.json(restaurant);
+  })
+  .catch((error) => {
+    console.error("Error fetching restaurant:", error);
+    res.status(500).json({ error: "Internal server error" });
+  });
 });
 
-app.get("/api/restaurants", (req, res) => {
+// route to get all restaurants
+app.get("/all/restaurants", verifyToken, (req, res) => {
+  res.render("allRestaurants");
+});
+
+app.get("/api/restaurants", verifyToken, (req, res) => {
   // Extract query parameters
   const page = parseInt(req.query.page) || 1;
   const perPage = parseInt(req.query.perPage) || 10;
@@ -99,15 +154,15 @@ app.get("/api/restaurants", (req, res) => {
     });
 });
 
-app.get("/add/restaurant", (req, res) => {
+
+
+
+
+// routes to add a new restaurant
+app.get("/add/restaurant", verifyToken, (req, res) => {
   res.render("addRestaurant");
 });
 
-app.get("/all/restaurants", (req, res) => {
-  res.render("allRestaurants");
-});
-
-// route to add a new restaurant
 app.post(
   "/api/restaurants",
   [
@@ -146,24 +201,8 @@ app.post(
   }
 );
 
-app.get("/add/user",(req,res)=>{
-  res.render("register.hbs",{
-    defaultLayout:false
-  })
-})
 
-app.post("/add/user",(req,res)=>{
-  var email = req.body.email;
-  var password = req.body.password;
-  var newuser = req.body;
-  console.log("reached here!");
-  user.register(newuser)
-      .then((result) =>{
-         console.log("added")
-        })
-      .catch((err) => console.log(err));
 
-});
 
 // route to update a restaurant by id
 app.put("/api/restaurants/:id", (req, res) => {
@@ -190,7 +229,7 @@ app.put("/api/restaurants/:id", (req, res) => {
 // route to delete a restaurant by id
 app.delete("/api/restaurants/:id", (req, res) => {
   const restaurantId = req.params.id;
-
+  console.log(restaurantId);
   restaurant
     .deleteRestaurantById(restaurantId)
     .then((deletedRestaurant) => {
@@ -204,6 +243,7 @@ app.delete("/api/restaurants/:id", (req, res) => {
       res.status(500).json({ error: "Internal server error" });
     });
 });
+
 
 app.get("/api/restaurant", (req, res) => {
   const query = req.query.query;
@@ -221,3 +261,10 @@ app.get("/api/restaurant", (req, res) => {
       res.status(500).json({ error: "Internal server error" });
     });
 });
+
+app.get("/logout",(req,res)=>{
+  res.cookie('token', '', { expires: new Date(0), httpOnly: true });
+  
+  // Redirect to the login page or any other appropriate page
+  res.redirect('/login');
+})
