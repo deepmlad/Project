@@ -55,13 +55,13 @@ app.get("/",verifyToken, (req, res) => {
 
 // register
 
-app.get("/add/user", verifyToken,(req,res)=>{
+app.get("/register",(req,res)=>{
   res.render("register.hbs",{
     layout:'secondary'
   })
 })
 
-app.post("/add/user",(req,res)=>{
+app.post("/register",(req,res)=>{
   var email = req.body.email;
   var password = req.body.password;
   var newuser = req.body;
@@ -87,10 +87,6 @@ var email = req.body.email;
 var password = req.body.password;
   user.login(email,password)
       .then((result)=>{
-        // const token = result.token;
-        // res.cookie('token', token, { maxAge: 3600000, httpOnly: true }); // Set cookie with token
-        // req.token = token
-        // res.redirect("/");
         res.send(result);
       })
       .catch((err)=>{

@@ -31,6 +31,7 @@
                     required>
                 <button type="submit" class="btn btn-primary" id="btnRegister">Register</button>
             </form>
+            Already Registered? <a href="/login">Login</a>
         </div>
     </center>
     <script>
@@ -46,17 +47,14 @@
                     alert("Please enter valid password!");
                     $("#txtpassword").focus();
                 } else {
-
                     var formData = $("#registerForm").serializeArray();
-
                     var jsonData = {};
                     $.each(formData, function () {
                         jsonData[this.name] = this.value;
                     });
-                    console.log(jsonData);
                     $.ajax({
                         type: "POST",
-                        url: "/add/user",
+                        url: "/register",
                         data: JSON.stringify(jsonData),
                         contentType: "application/json",
                         success: function (resp) {
@@ -68,10 +66,10 @@
                                 alert("Something went wrong while registering!");
                             }
                         }
-                    })
-                });
-        }
-        })
+                    });
+                }
+            });
+        });
     </script>
 </body>
 
