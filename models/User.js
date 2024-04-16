@@ -1,61 +1,87 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+const connectionString = process.env.DB_CONNECTION_STRING;
+const jwtSecret = process.env.JWT_SECRET;
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  email: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  password: {
+    type: String,
+    required: true
+  }
 });
 
-// Hash password before saving
-userSchema.pre("save", function (next) {
+userSchema.pre('create', function(next) {
   const user = this;
-  if (!user.isModified("password")) {
+  if (!user.isModified('password')) {
     return next();
   }
-  bcrypt.genSalt(10, (err, salt) => {
-    if (err) {
-      return next(err);
-    }
-    bcrypt.hash(user.password, salt, (err, hash) => {
-      if (err) {
-        return next(err);
-      }
+
+  bcrypt.genSalt(10)
+    .then(salt => bcrypt.hash(user.password, salt))
+    .then(hash => {
       user.password = hash;
       next();
-    });
-  });
+    })
+    .catch(err => next(err));
 });
 
-// Define static methods for user model
-userSchema.statics.register = function (userData) {
-  return new Promise((resolve, reject) => {
-    const user = new User(userData);
-    return this.create(user)
-  });
+userSchema.methods.generateAuthToken = function() {
+  const token = jwt.sign({ _id: this._id }, jwtSecret);
+  return token;
 };
 
-userSchema.statics.login = function (email, password) {
-  return new Promise((resolve, reject) => {
-    User.findOne({ email }, (err, user) => {
-      if (err) {
-        return reject(err);
+userSchema.statics.findByCredentials = function(email, password) {
+  return this.findOne({ email }).then(user => {
+    if (!user) {
+      throw new Error('Invalid login credentials');
+    }
+
+    return bcrypt.compare(password, user.password).then(isMatch => {
+      if (!isMatch) {
+        throw new Error('Invalid login credentials');
       }
-      if (!user) {
-        return reject(new Error("User not found"));
-      }
-      bcrypt.compare(password, user.password, (err, result) => {
-        if (err) {
-          return reject(err);
-        }
-        if (!result) {
-          return reject(new Error("Invalid password"));
-        }
-        resolve(user);
-      });
+      return user;
     });
   });
 };
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model('User', userSchema);
 
-module.exports = User;
+const db = {
+  initialize: function() {
+    return new Promise((resolve, reject) => {
+      mongoose.connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
+        .then(() => {
+          console.log("Connected to MongoDB Atlas");
+          resolve();
+        })
+        .catch(err => {
+          console.error("Error connecting to MongoDB Atlas:", err);
+          reject(err);
+        });
+    });
+  },
+
+  register: function(userData) {
+    const user = new User(userData);
+    console.log(user);
+    return User.create(user);
+  },
+
+  login: function(email, password) {
+    return User.findByCredentials(email, password).then(user => {
+      const token = user.generateAuthToken();
+      return { user, token };
+    });
+  }
+};
+
+module.exports = db;

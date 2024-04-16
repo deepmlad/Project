@@ -156,10 +156,12 @@ app.post("/add/user",(req,res)=>{
   var email = req.body.email;
   var password = req.body.password;
   var newuser = req.body;
+  console.log("reached here!");
   user.register(newuser)
-      .then(usr=>{
-        console.log(usr);
-      })
+      .then((result) =>{
+         console.log("added")
+        })
+      .catch((err) => console.log(err));
 
 });
 
