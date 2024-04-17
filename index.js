@@ -131,6 +131,7 @@ app.get("/api/restaurants", verifyToken, (req, res) => {
   // Extract query parameters
   const page = parseInt(req.query.page) || 1;
   const perPage = parseInt(req.query.perPage) || 10;
+  const borough = req.query.borough;
 
   // Validate query parameters (optional, you can use express-validator or similar middleware)
   if (!page || !perPage || isNaN(parseInt(page)) || isNaN(parseInt(perPage))) {
@@ -139,7 +140,7 @@ app.get("/api/restaurants", verifyToken, (req, res) => {
 
   // Fetch restaurants from the database
   restaurant
-    .getAllRestaurants(parseInt(page), parseInt(perPage))
+    .getAllRestaurants(parseInt(page), parseInt(perPage),borough)
     .then((restaurants) => {
       // Return the restaurants to the client
       res.json(restaurants);

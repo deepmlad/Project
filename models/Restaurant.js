@@ -47,9 +47,15 @@ const db = {
   },
 
   // Function to get all restaurants for a specific page and optionally filter by borough
-  getAllRestaurants: function(page, perPage) {
+  getAllRestaurants: function(page, perPage,borough) {
     const skip = (page - 1) * perPage;
-    return Restaurant.find().skip(skip).limit(perPage).exec()
+    let query = Restaurant.find();
+    
+    if (borough) {
+        query = query.where('borough').equals(borough);
+    }
+    
+    return query.skip(skip).limit(perPage).exec()
         .then(restaurants => {
             return Restaurant.countDocuments().exec().then(total => {
                 return { data: restaurants, recordsTotal: total };

@@ -93,6 +93,7 @@
 </div>
 <script>
     var perPageGlobal = 10;
+    var borough = "";
     $(document).ready(function () {
         let totalpages;
         let currentpage;
@@ -101,8 +102,13 @@
         $("#perPage").change(function () {
             perPageGlobal = $(this).find(":selected").val();
             if (perPageGlobal != null || perPageGlobal != undefined || perPageGlobal == "") {
-                loadData(1, perPageGlobal);
+                loadData(1, perPageGlobal, borough);
             }
+        });
+
+        $("#borough").change(function(){
+             borough = $(this).find(":selected").val();
+            loadData(1,perPageGlobal,borough);
         })
 
         $(document).on('click', '#btnEdit', function (event) {
@@ -239,14 +245,15 @@
             }
         });
     });
-    function loadData(page, perPage = 10) {
+    function loadData(page, perPage = 10,borough="") {
         currentpage = page;
         $.ajax({
             type: "GET",
             url: "/api/restaurants",
             data: {
                 page: page,
-                perPage: perPage
+                perPage: perPage,
+                borough:borough
             },
             success: function (resp) {
                 totalpages = Math.ceil(resp.recordsTotal);
@@ -285,8 +292,8 @@
         display = ``;
         if (page <= totalpages && currentpage <= totalpages) {
             display += `
-                <button class="btn btn-info" onclick=loadData(${currentpage - 1},${perPageGlobal})>Previous</button>
-                <button class="btn btn-info" onclick=loadData(${currentpage + 1},${perPageGlobal})>Next</button>
+                <button class="btn btn-info" onclick=loadData(${currentpage - 1},${perPageGlobal},'${borough}')>Previous</button>
+                <button class="btn btn-info" onclick=loadData(${currentpage + 1},${perPageGlobal},'${borough}')>Next</button>
             `;
         }
         return display;
