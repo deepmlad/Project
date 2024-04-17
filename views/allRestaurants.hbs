@@ -1,8 +1,12 @@
 <center>
     <div class="container" style="margin-top: 10px;">
         <div class="row">
-            <div class="col-10">
+            <div class="col-7">
                 <input type="text" class="form-control" id="txtSearch" style="text-align:center" placeholder="Search">
+            </div>
+            <div class="col-3">
+                <select name="borough" id="borough" class="form-control" aria-placeholder="Select Borough">
+                </select>
             </div>
             <div class="col-2">
                 <select name="perPage" id="perPage" class="form-control">
@@ -13,6 +17,7 @@
                 </select>
             </div>
         </div>
+        <br>
         <div id="restaurant-list">
             <table class="table table-hover" id="tblRestaurants">
                 <thead>
@@ -87,16 +92,16 @@
     </div>
 </div>
 <script>
+    var perPageGlobal = 10;
     $(document).ready(function () {
         let totalpages;
         let currentpage;
-        var perPageGlobal=10;
         loadData(1);
-
-        $("#perPage").change(function(){
+        bindBorough();
+        $("#perPage").change(function () {
             perPageGlobal = $(this).find(":selected").val();
-            if(perPageGlobal != null || perPageGlobal != undefined || perPageGlobal == ""){
-                loadData(1,perPageGlobal);
+            if (perPageGlobal != null || perPageGlobal != undefined || perPageGlobal == "") {
+                loadData(1, perPageGlobal);
             }
         })
 
@@ -234,14 +239,14 @@
             }
         });
     });
-    function loadData(page,perPage=10) {
+    function loadData(page, perPage = 10) {
         currentpage = page;
         $.ajax({
             type: "GET",
             url: "/api/restaurants",
             data: {
                 page: page,
-                perPage:perPage
+                perPage: perPage
             },
             success: function (resp) {
                 totalpages = Math.ceil(resp.recordsTotal);
@@ -270,6 +275,7 @@
                     });
                 }
                 $("#tblRestaurants tbody").html(display);
+                console.log("--" + perPageGlobal);
                 $("#pagination-controls").html(updatePagination(page));
             }
         });
@@ -279,10 +285,27 @@
         display = ``;
         if (page <= totalpages && currentpage <= totalpages) {
             display += `
-                <button class="btn btn-info" onclick=loadData(${currentpage - 1})>Previous</button>
-                <button class="btn btn-info" onclick=loadData(${currentpage + 1})>Next</button>
+                <button class="btn btn-info" onclick=loadData(${currentpage - 1},${perPageGlobal})>Previous</button>
+                <button class="btn btn-info" onclick=loadData(${currentpage + 1},${perPageGlobal})>Next</button>
             `;
         }
         return display;
+    }
+
+    function bindBorough() {
+        $.ajax({
+            type: "GET",
+            url: "/borough",
+            success: function (resp) {
+                $("#borough").append(`<option>-- Select Borough --</option>`);
+                if (resp) {
+                    $.each(resp, (index, value) => {
+                        $("#borough").append(`<option value='${value}'>${value}</option>`);
+                    });
+                }else{
+                    console.log("something went wrong!");
+                }
+            }
+        })
     }
 </script>

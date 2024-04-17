@@ -67,6 +67,10 @@ const db = {
     return Restaurant.findByIdAndUpdate(id, data, { new: true });
   },
 
+  getUniqueBorough: function(){
+    return Restaurant.distinct('borough');
+  },
+
   // Function to delete a restaurant by its ID
   deleteRestaurantById: function(id) {
     return Restaurant.findByIdAndDelete(id);

@@ -58,12 +58,13 @@
                         data: JSON.stringify(jsonData),
                         contentType: "application/json",
                         success: function (resp) {
-                            if (resp) {
+                            if (resp.status == "success") {
                                 alert("User registered successfully!");
                                 location.href = "/login";
                             }
                             else {
-                                alert("Something went wrong while registering!");
+                                alert("User already exists!");
+                                window.location.href = "/login";
                             }
                         }
                     });

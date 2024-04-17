@@ -70,7 +70,7 @@ app.post("/register",(req,res)=>{
           res.json(result);
         })
       .catch((err) => {
-        console.log(err)
+        res.json("failed"); 
       });
 
 });
@@ -150,6 +150,12 @@ app.get("/api/restaurants", verifyToken, (req, res) => {
     });
 });
 
+app.get("/borough", verifyToken,(req,res)=>{
+    restaurant.getUniqueBorough()
+      .then((borough)=>{
+        res.json(borough);
+      })
+})
 
 
 
